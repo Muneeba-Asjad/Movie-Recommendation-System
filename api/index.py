@@ -2,13 +2,12 @@ from flask import Flask, render_template, request, jsonify
 import pickle
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='../templates')
 
-# BASE DIR Fix for Vercel Serverless File Reading
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def load_pickle(filename):
-    filepath = os.path.join(BASE_DIR, 'models', filename)
+    filepath = os.path.join(BASE_DIR, '../models', filename)
     if os.path.exists(filepath):
         try:
             with open(filepath, 'rb') as f:
@@ -21,8 +20,6 @@ def load_pickle(filename):
 # Safe Models Loading
 svd_model = load_pickle('svd_model.pkl')
 nmf_model = load_pickle('nmf_model.pkl')
-cosine_sim = load_pickle('cosine_similarity.pkl') or load_pickle('cosine_similarity.pk1')
-tfidf_vectorizer = load_pickle('tfidf_vectorizer.pkl')
 
 @app.route('/')
 def index():
@@ -56,5 +53,6 @@ def predict():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+# Vercel ko is 'app' variable ki zaroorat hoti hai
 if __name__ == '__main__':
     app.run(debug=True)
