@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineAI - Movie Recommendation Engine</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <style>
+        /* ==========================================================================
+           EXACT MATCH UI: DARK GLOWING CENTERED CARD DESIGN
+           ========================================================================== */
+        :root {
+            --bg-gradient: radial-gradient(circle at center, #0f1c2e 0%, #050a12 100%);
+            --card-bg: #0b1320;
+            --input-bg: #060a12;
+            --accent-blue: #2ab8f5;
+            --accent-glow: 0 0 25px rgba(42, 184, 245, 0.25);
+            --border-glow: 1px solid rgba(42, 184, 245, 0.3);
+            --text-main: #f0f6fc;
+            --text-sub: #7d8b9e;
+            --radius-main: 24px;
+            --radius-inner: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-main);
+            padding: 20px;
+        }
+
+        /* Centered Glowing Card */
+        .analyzer-card {
+            background: var(--card-bg);
+            border: var(--border-glow);
+            box-shadow: 0 0 40px rgba(0, 150, 255, 0.15);
+            border-radius: var(--radius-main);
+            width: 100%;
+            max-width: 520px;
+            padding: 40px 35px;
+            text-align: center;
+            position: relative;
+        }
+
+        /* Header Section */
+        .card-header {
+            margin-bottom: 25px;
+        }
+
+        .title-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .title-wrapper .icon {
+            font-size: 2.2rem;
+        }
+
+        .title-wrapper h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent-blue);
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: var(--text-sub);
+            font-size: 0.92rem;
+            font-weight: 400;
+        }
+
+        /* Form Controls */
+        .form-group {
+            text-align: left;
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .custom-select {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid rgba(42, 184, 245, 0.2);
+            color: var(--text-main);
+            padding: 14px 16px;
+            border-radius: var(--radius-inner);
+            outline: none;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .custom-select:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 12px rgba(42, 184, 245, 0.2);
+        }
+
+        /* Main Blue Action Button */
+        .btn-submit {
+            width: 100%;
+            background: var(--accent-blue);
+            color: #050a12;
+            border: none;
+            padding: 16px;
+            border-radius: var(--radius-inner);
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 25px;
+            box-shadow: var(--accent-glow);
+        }
+
+        .btn-submit:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 0 30px rgba(42, 184, 245, 0.4);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Results Display Section */
+        .results-box {
+            margin-top: 25px;
+            display: none;
+            text-align: left;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .results-title {
+            font-size: 0.85rem;
+            color: var(--accent-blue);
+            margin-bottom: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .movie-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .movie-item {
+            background: var(--input-bg);
+            border: 1px solid rgba(42, 184, 245, 0.15);
+            padding: 12px 16px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .movie-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .movie-score {
+            background: rgba(42, 184, 245, 0.15);
+            color: var(--accent-blue);
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        /* Footer Text */
+        .card-footer {
+            margin-top: 25px;
+            font-size: 0.8rem;
+            color: var(--text-sub);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="analyzer-card">
+        <!-- Header -->
+        <div class="card-header">
+            <div class="title-wrapper">
+                <span class="icon">🤖</span>
+                <h1>Cine AI</h1>
+            </div>
+            <p class="subtitle">ML Based Movie Recommendation System</p>
+        </div>
+
+        <!-- Form Controls -->
+        <div class="form-group">
+            <label>Select User Profile</label>
+            <select id="userSelect" class="custom-select">
+                <option value="U001">User 1 (Action & Sci-Fi)</option>
+                <option value="U002">User 2 (Drama & Romance)</option>
+                <option value="U003">User 3 (Thriller & Horror)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Select Recommendation Model</label>
+            <select id="modelSelect" class="custom-select">
+                <option value="SVD">SVD Matrix Factorization</option>
+                <option value="NMF">NMF Decomposition</option>
+                <option value="Cosine">Cosine Similarity</option>
+                <option value="TFIDF">TF-IDF Vectorizer</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Number of Recommendations</label>
+            <select id="topKSelect" class="custom-select">
+                <option value="3">Top 3 Movies</option>
+                <option value="5" selected>Top 5 Movies</option>
+            </select>
+        </div>
+
+        <!-- Action Button -->
+        <button id="generateBtn" class="btn-submit">
+            Get Recommendations 🚀
+        </button>
+
+        <!-- Results Section -->
+        <div id="resultsBox" class="results-box">
+            <div class="results-title" id="resultsTitle">Recommended Movies</div>
+            <div id="movieList" class="movie-list"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="card-footer">
+            Powered by ML Models | Movie Project
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const userSelect = document.getElementById('userSelect');
+            const modelSelect = document.getElementById('modelSelect');
+            const topKSelect = document.getElementById('topKSelect');
+            const generateBtn = document.getElementById('generateBtn');
+            const resultsBox = document.getElementById('resultsBox');
+            const movieList = document.getElementById('movieList');
+            const resultsTitle = document.getElementById('resultsTitle');
+
+            generateBtn.addEventListener('click', () => {
+                const userId = userSelect.value;
+                const selectedModel = modelSelect.value;
+                const topK = topKSelect.value;
+
+                generateBtn.innerHTML = `Analyzing... ⏳`;
+                generateBtn.disabled = true;
+
+                fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        algorithm: selectedModel,
+                        top_k: topK
+                    })
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        movieList.innerHTML = '';
+                        if (data.status === 'success' && data.data.length > 0) {
+                            data.data.forEach(movie => {
+                                const item = `
+                                <div class="movie-item">
+                                    <span class="movie-name">${movie.name}</span>
+                                    <span class="movie-score">${movie.score}% Match</span>
+                                </div>
+                            `;
+                                movieList.insertAdjacentHTML('beforeend', item);
+                            });
+                            resultsTitle.innerText = `Top Matches (${selectedModel})`;
+                            resultsBox.style.display = 'block';
+                        }
+
+                        generateBtn.innerHTML = `Get Recommendations 🚀`;
+                        generateBtn.disabled = false;
+                    })
+                    .catch(err => {
+                        console.error('Error:', err);
+                        generateBtn.innerHTML = `Get Recommendations 🚀`;
+                        generateBtn.disabled = false;
+                    });
+            });
+        });
+    </script>
+</body>
+
+</html>
