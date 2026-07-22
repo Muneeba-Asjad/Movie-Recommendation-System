@@ -1,55 +1,52 @@
-from flask import Flask, render_template, request, jsonify
+import streamlit as st
 import pickle
 import os
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Page Config
+st.set_page_config(page_title="Movie Recommendation System", page_icon="🎬", layout="wide")
 
-app = Flask(__name__, template_folder=os.path.join(BASE_DIR, 'templates'))
+st.title("🎬 Movie Recommendation System")
+st.write("Find your next favorite movie using AI!")
 
-def load_pickle(filename):
-    try:
-        filepath = os.path.join(BASE_DIR, 'models', filename)
-        if os.path.exists(filepath):
+# Safe Model Loading Function
+@st.cache_resource
+def load_model(filename):
+    filepath = os.path.join(os.path.dirname(__file__), 'models', filename)
+    if os.path.exists(filepath):
+        try:
             with open(filepath, 'rb') as f:
                 return pickle.load(f)
-    except Exception as e:
-        print(f"Error loading {filename}: {e}")
+        except Exception as e:
+            st.warning(f"Could not load {filename}: {e}")
+            return None
     return None
 
-svd_model = load_pickle('svd_model.pkl')
-nmf_model = load_pickle('nmf_model.pkl')
-cosine_sim = load_pickle('cosine_similarity.pkl') or load_pickle('cosine_similarity.pk1')
+# Load Models
+svd_model = load_model('svd_model.pkl')
+nmf_model = load_model('nmf_model.pkl')
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+# Sidebar Controls
+st.sidebar.header("User Settings")
+user_id = st.sidebar.text_input("User ID", value="U001")
+algorithm = st.sidebar.selectbox("Select Algorithm", ["SVD", "NMF", "Cosine Similarity"])
+top_k = st.sidebar.slider("Number of Recommendations", min_value=1, max_value=10, value=5)
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    try:
-        data = request.get_json() or {}
-        algorithm = data.get('algorithm', 'SVD')
-        top_k = int(data.get('top_k', 5))
-
-        mock_movies = [
-            {"name": "Inception", "score": 98},
-            {"name": "Interstellar", "score": 95},
-            {"name": "The Dark Knight", "score": 92},
-            {"name": "Pulp Fiction", "score": 89},
-            {"name": "The Matrix", "score": 86},
-            {"name": "Fight Club", "score": 84}
-        ]
-
-        results = mock_movies[:top_k]
-
-        return jsonify({
-            'status': 'success',
-            'algorithm_used': algorithm,
-            'data': results
-        })
-
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
-if __name__ == '__main__':
-    app.run(debug=True)
+if st.sidebar.button("Get Recommendations", type="primary"):
+    st.subheader(f"Top {top_k} Recommendations ({algorithm}) for User: {user_id}")
+    
+    # Mock / Sample Recommendations (Replace with your model prediction logic)
+    mock_movies = [
+        {"name": "Inception", "genre": "Sci-Fi", "rating": "9.8/10"},
+        {"name": "Interstellar", "genre": "Sci-Fi", "rating": "9.5/10"},
+        {"name": "The Dark Knight", "genre": "Action", "rating": "9.2/10"},
+        {"name": "Pulp Fiction", "genre": "Crime", "rating": "8.9/10"},
+        {"name": "The Matrix", "genre": "Sci-Fi", "rating": "8.6/10"},
+        {"name": "Fight Club", "genre": "Drama", "rating": "8.4/10"}
+    ]
+    
+    results = mock_movies[:top_k]
+    
+    cols = st.columns(len(results))
+    for idx, movie in enumerate(results):
+        with cols[idx % 3]:
+            st.info(f"**{movie['name']}**\n\nGenre: {movie['genre']}\n\nRating: {movie['rating']}")
