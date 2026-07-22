@@ -2,24 +2,26 @@ from flask import Flask, render_template, request, jsonify
 import pickle
 import os
 
-app = Flask(__name__, template_folder='../templates')
+# Absolute path for Templates folder in Vercel
+current_dir = os.path.dirname(os.path.abspath(__file__))
+template_dir = os.path.abspath(os.path.join(current_dir, '..', 'templates'))
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app = Flask(__name__, template_folder=template_dir)
 
 def load_pickle(filename):
-    filepath = os.path.join(BASE_DIR, '../models', filename)
-    if os.path.exists(filepath):
-        try:
+    try:
+        filepath = os.path.abspath(os.path.join(current_dir, '..', 'models', filename))
+        if os.path.exists(filepath):
             with open(filepath, 'rb') as f:
                 return pickle.load(f)
-        except Exception as e:
-            print(f"Error loading {filename}: {e}")
-            return None
+    except Exception as e:
+        print(f"Error loading {filename}: {e}")
     return None
 
-# Safe Models Loading
+# Attempting safe loads (without crashing if missing)
 svd_model = load_pickle('svd_model.pkl')
 nmf_model = load_pickle('nmf_model.pkl')
+cosine_sim = load_pickle('cosine_similarity.pkl') or load_pickle('cosine_similarity.pk1')
 
 @app.route('/')
 def index():
@@ -33,6 +35,7 @@ def predict():
         algorithm = data.get('algorithm', 'SVD')
         top_k = int(data.get('top_k', 5))
 
+        # Sample dynamic predictions payload
         mock_movies = [
             {"name": "Inception", "score": 98},
             {"name": "Interstellar", "score": 95},
@@ -53,6 +56,6 @@ def predict():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# Vercel ko is 'app' variable ki zaroorat hoti hai
+# Required for local testing & Vercel WSGI
 if __name__ == '__main__':
     app.run(debug=True)
